@@ -16,7 +16,6 @@ def main():
 
     preprocessor = Preprocessor(text_dir, out_dir, stop_list)
     out_files = preprocessor.preprocess(onlyfiles)
-
     # index = Index(out_files)
     # index.dump(index_file)
 

@@ -2,6 +2,8 @@ from nltk.stem import SnowballStemmer
 from typing import *
 
 import os
+import json
+
 
 
 class Preprocessor:
@@ -17,21 +19,42 @@ class Preprocessor:
 
     def preprocess(self, files: Iterable[str]):
         out_files = []
+        n = 0
         for file in files:
+            print(f"{n}:preprocess for {file} starting......")
             in_path, out_path = self.in_dir + file, self.out_dir + file
             out_files.append(out_path)
-            # self._preprocess_file(in_path, out_path)
-
+            self._preprocess_file(in_path, out_path)
+            print(f"preprocess for {file} done")
+            n+=1
+        print("preprocess completed")
         return out_files
+
+
+    def _preprocess_text(self, line):
+        result = ''
+        for word in line:
+            if word not in self.stop_list and not word.isnumeric():
+                result += (self._stemmer.stem(word) + ' ')
+        return result
 
     def _preprocess_file(self, in_path: str, out_path: str) -> None:
         with open(in_path, encoding="utf-8") as f_in, open(out_path, "w+", encoding="utf-8") as f_out:
-            for line in f_in:
-                if line == "\n" and line == " ":
-                    continue
-                for word in self._parse_line(line, self.skipped_symbols):
-                    if word not in self.stop_list and not word.isnumeric():
-                        f_out.write(self._stemmer.stem(word) + "\n")
+            json_data = json.load(f_in)
+
+            for tweet in json_data:
+                # extracting  and parsing tweet text and erasing skipped symbols
+                if tweet.get('RT_text') is not None:
+                    line = Preprocessor._parse_line(tweet['RT_text'], self.skipped_symbols)
+                    tweet['RT_text'] = self._preprocess_text(line)
+
+                if tweet.get('text') is not None :
+                    line = Preprocessor._parse_line(tweet['text'], self.skipped_symbols)
+                    tweet['text'] = self._preprocess_text(line)
+                else:
+                    exit(-1)
+
+            f_out.write(json.dumps(json_data, ensure_ascii=False))
 
     @staticmethod
     def _load_stop_list(stop_list_path: str) -> set:
