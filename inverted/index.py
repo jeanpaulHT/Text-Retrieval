@@ -26,7 +26,6 @@ def merge_posts(a, b):
     yield from i
     yield from j
 
-
 def merge_iters(a, b):
     i, j = iter(a), iter(b)
     val_i, val_j = next(i, None), next(j, None)
@@ -46,8 +45,6 @@ def merge_iters(a, b):
     
     yield from i
     yield from j
-
-
 
 class MergeableIndex:
     ENTRY_SIZE = 128
@@ -100,7 +97,6 @@ class MergeableIndex:
         os.remove(self.__index_file)
         os.remove(self.__search_file)
         
-
     def merge(self, other: 'MergeableIndex', name):
         tmp_f = name
         tmp_idx = name + '.idx'
@@ -190,18 +186,3 @@ class MergeableIndex:
                 return bin_search_index(s, begin, m)
 
             return bin_search_index(string, 0, len(self))
-
-
-# class Index:
-#     _stemmer = SnowballStemmer('spanish')
-
-#     def __init__(self, index_dir: str, index_name: str, files: Iterable[str]):
-#         self.out_dir = index_dir
-#         self.out_name = index_name
-#         self.files = {(id, file) for id, file in enumerate(files)}
-#         self.normal = {}
-
-#         if not os.path.exists(self.out_dir):
-#             os.makedirs(self.out_dir)
-
-#     def 

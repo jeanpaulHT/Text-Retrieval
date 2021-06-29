@@ -16,8 +16,9 @@ def make_ascii_compliant(text):
 class Preprocessor:
     skipped_symbols = {".", "?", "!", "¿", "<", ">", ",",
                        "º", " ", ":", ";", "«", "»", "(", 
-                       ")", "\n", "\r", "\0", "@", "#", '\"', '-', '_', 
-                       '+', '-', '*', '/', '|', '“', '”', '¡', '\'', '$', '%'}
+                       ")", "\n", "\r", "\0", "@", "#", 
+                       '\"', '-', '_', '+', '*', '/', '|', 
+                       '“', '”', '¡', '\'', '$', '%', '&'}
     _stemmer = SnowballStemmer('spanish')
 
     def __init__(self, in_dir: str, out_dir: str, stop_list_path: str):
@@ -40,6 +41,12 @@ class Preprocessor:
         print("preprocess completed")
         return out_files
 
+    def _locate(self, files: Iterable[str]):
+        out_files = []
+        for file in files:
+            in_path, out_path = self.in_dir + file, self.out_dir + file.split('.')[0]
+            out_files.append(out_path)
+        return out_files
 
     def _preprocess_text(self, line):
         def gen():
@@ -68,7 +75,7 @@ class Preprocessor:
                 else:
                     print(f'ERROR: {in_path=} is not compliant')
                     exit(-1)
-                print(lineno)
+
                 f_out.write(res + '\n')
 
     @staticmethod
