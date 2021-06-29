@@ -1,9 +1,9 @@
 
 #Variables that contains the user credentials for the Twitter API 
-access_token = "104997748-7cCdw06UzvQI86C5bHskKl90qCPJi3vfbRTEef68"
-access_token_secret = "ojBA7ZYhqrMrv6z0MqkonY74wOfQ9WZpNFloFgHykBib9"
-consumer_key = "WKtmu8QRdyTtKDeMirpDW50zj"
-consumer_secret = "G3pP3ZLJBcE7AHhiGAOsLPy06956oXUCbGstp0OIKM8EEH7312"
+access_token = "1369347540454408197-FXU7wauQT8qJGmWZ6YilJCjWF7IZ07"
+access_token_secret = "PTXoqz7ixHPBvYJn0ank5O8IpqHa3bkbyXHs3UmQ0FSL5"
+consumer_key = "zjKw6LU9PPXyJrhrHj4Nlr92i"
+consumer_secret = "k0f2M8rGHySoUICYDGJfbdwf4hLyvgVL8PlMXtJHk8ACmsdKSC"
 
 #destination folder for raw tweets 
 folder_path = "raw/"
@@ -37,5 +37,5 @@ tracklist = {
 tracklist = {
     'peter castle': ['Pedro Castillo', '@PedroCastilloTe'],
     'señora k': ['Keiko Fujimori', '@KeikoFujimori'],
-    'Mi Fiscal':['@JoseDomingoPer', 'Jose Domingo Perez']
+    'Mi Fiscal':['Jose Domingo Perez', '@JoseDomingoPer']
 }

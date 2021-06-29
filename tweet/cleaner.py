@@ -36,6 +36,7 @@ def parse_file(file_in, file_out):
 
                 if decoded.get('retweeted_status') is not None: 
                     cleanLine.update({"retweeted" : True })
+                    cleanLine.update({"RT_id" : decoded['retweeted_status']['id']})
                     if decoded.get('retweeted_status').get('extended_tweet') is not None:
                         cleanLine.update({"RT_text" : encodeText(decoded['retweeted_status']['extended_tweet']['full_text']) })
                     else:
@@ -61,10 +62,3 @@ if __name__ == '__main__':
         file_out = join(path_out, f)   
         if isfile(file_in):
             parse_file(file_in, file_out)
-
-
-    
-
-        
-                
-        
