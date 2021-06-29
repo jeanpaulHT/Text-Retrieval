@@ -5,7 +5,6 @@ from os import listdir
 from os.path import isfile, join
 
 
-
 def main():
     mypath = "../texts/data_elecciones"
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
@@ -16,6 +15,7 @@ def main():
 
     preprocessor = Preprocessor(text_dir, out_dir, stop_list)
     out_files = preprocessor.preprocess(onlyfiles)
+
     # index = Index(out_files)
     # index.dump(index_file)
 
