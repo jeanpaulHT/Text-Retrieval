@@ -1,6 +1,6 @@
 from nltk.stem import SnowballStemmer
 from typing import *
-
+import validators
 import os
 import json
 import emoji
@@ -9,22 +9,15 @@ import regex
 
 import re
 
-def deEmojify(text):
-    regrex_pattern = re.compile(pattern = "["
-        u"\U0001F600-\U0001F64F"  # emoticons
-        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
-        u"\U0001F680-\U0001F6FF"  # transport & map symbols
-        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
-                           "]+", flags = re.UNICODE)
-    return regrex_pattern.sub(r'',text)
-
+def make_ascii_compliant(text):
+    return ''.join((c for c in text if len(c.encode()) == 1))
 
 
 class Preprocessor:
     skipped_symbols = {".", "?", "!", "¿", "<", ">", ",",
                        "º", " ", ":", ";", "«", "»", "(", 
-                       ")", "\n", "\0", "@", "#", '\"', '-', '_', 
-                       '+', '-', '*', '/', '|'}
+                       ")", "\n", "\r", "\0", "@", "#", '\"', '-', '_', 
+                       '+', '-', '*', '/', '|', '“', '”', '¡', '\'', '$', '%'}
     _stemmer = SnowballStemmer('spanish')
 
     def __init__(self, in_dir: str, out_dir: str, stop_list_path: str):
@@ -47,18 +40,21 @@ class Preprocessor:
         print("preprocess completed")
         return out_files
 
+
     def _preprocess_text(self, line):
-        result = ''
-        for word in line:
-            if word not in self.stop_list and not word.isnumeric():
-                result += (deEmojify(self._stemmer.stem(word)) + ' ')
-        return result
+        def gen():
+            for word in line:
+                word = make_ascii_compliant(word)
+                if word not in self.stop_list and not word.isnumeric():
+                    yield self._stemmer.stem(word)
+
+        return ' '.join(gen())
 
     def _preprocess_file(self, in_path: str, out_path: str) -> None:
         with open(in_path, encoding="utf-8") as f_in, open(out_path, "w+", encoding="utf-8") as f_out:
             json_data = json.load(f_in)
 
-            for tweet in json_data:
+            for lineno, tweet in enumerate(json_data, 1):
                 # extracting  and parsing tweet text and erasing skipped symbols
                 res = str(tweet['id']) + ' '
                 if tweet.get('RT_text') is not None:
@@ -69,9 +65,10 @@ class Preprocessor:
                     line = Preprocessor._parse_line(tweet['text'], self.skipped_symbols)
                     tweet['text'] = self._preprocess_text(line)
                     res += tweet['text']
-
                 else:
+                    print(f'ERROR: {in_path=} is not compliant')
                     exit(-1)
+                print(lineno)
                 f_out.write(res + '\n')
 
     @staticmethod
@@ -87,10 +84,14 @@ class Preprocessor:
 
     @staticmethod
     def _parse_line(line: str, skipped: Iterable) -> list:
-        word_list = line.split(" ")
+        word_list = line.replace('\r', ' ').replace('\n', ' ').split(' ')
         res = list()
         for word in word_list:
-            new_word = "".join(c.lower() for c in word if c not in skipped)
-            if len(new_word) != 0:
-                res.append(new_word)
+            if not word.isascii():
+                word = make_ascii_compliant(word)
+
+            if word.isalpha() or not (validators.url(word) or validators.email(word)):    
+                new_word = "".join(c.lower() for c in word if c not in skipped)
+                if len(new_word) != 0:
+                    res.append(new_word)
         return res
