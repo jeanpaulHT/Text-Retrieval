@@ -3,6 +3,9 @@ from typing import *
 
 import os
 import json
+import emoji
+import regex
+
 
 import re
 
