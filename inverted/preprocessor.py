@@ -4,6 +4,18 @@ from typing import *
 import os
 import json
 
+import re
+
+def deEmojify(text):
+    regrex_pattern = re.compile(pattern = "["
+        u"\U0001F600-\U0001F64F"  # emoticons
+        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        u"\U0001F680-\U0001F6FF"  # transport & map symbols
+        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                           "]+", flags = re.UNICODE)
+    return regrex_pattern.sub(r'',text)
+
+
 
 class Preprocessor:
     skipped_symbols = {".", "?", "!", "¿", "<", ">", ",",
@@ -36,7 +48,7 @@ class Preprocessor:
         result = ''
         for word in line:
             if word not in self.stop_list and not word.isnumeric():
-                result += (self._stemmer.stem(word) + ' ')
+                result += (deEmojify(self._stemmer.stem(word)) + ' ')
         return result
 
     def _preprocess_file(self, in_path: str, out_path: str) -> None:
@@ -47,13 +59,11 @@ class Preprocessor:
                 # extracting  and parsing tweet text and erasing skipped symbols
                 res = str(tweet['id']) + ' '
                 if tweet.get('RT_text') is not None:
-                    line = Preprocessor._parse_line(
-                        tweet['RT_text'], self.skipped_symbols)
+                    line = Preprocessor._parse_line(tweet['RT_text'], self.skipped_symbols)
                     tweet['RT_text'] = self._preprocess_text(line)
                     res += tweet['RT_text']
                 elif tweet.get('text') is not None:
-                    line = Preprocessor._parse_line(
-                        tweet['text'], self.skipped_symbols)
+                    line = Preprocessor._parse_line(tweet['text'], self.skipped_symbols)
                     tweet['text'] = self._preprocess_text(line)
                     res += tweet['text']
 

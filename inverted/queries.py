@@ -1,5 +1,4 @@
 from collections import deque
-from index import Index
 
 
 def query_and(list_1: list, list_2: list) -> list:

@@ -1,6 +1,6 @@
-from index import Index
+from index import MergeableIndex
 from preprocessor import Preprocessor
-from queries import Query
+# from queries import Query
 from os import listdir
 from os.path import isfile, join
 
@@ -14,7 +14,9 @@ def main():
     index_file = "../texts/index.txt"
 
     preprocessor = Preprocessor(text_dir, out_dir, stop_list)
-    out_files = preprocessor.preprocess(onlyfiles)
+    # out_files = preprocessor.preprocess(onlyfiles)
+
+    index = MergeableIndex('../texts/preprocessing/tweets_2018-08-07', "../texts/index/tmp_batch_1")
 
     # index = Index(out_files)
     # index.dump(index_file)
