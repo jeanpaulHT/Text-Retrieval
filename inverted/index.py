@@ -3,9 +3,17 @@ from typing import *
 import os
 from collections import Counter
 import pickle
-import linecache
-import sys
-import itertools
+from cached_property import cached_property
+
+import math
+
+def _idf(N, df):
+    return math.log10(N/df)
+
+def _tf_idf(tf_td, idf):
+    return math.log10(1 + tf_td) * idf
+
+
 
 def merge_posts(a, b):
     i, j = iter(a), iter(b)
@@ -61,41 +69,59 @@ class MergeableIndex:
             with open(self.__search_file, 'rb') as f:
                 f.seek(0, 2)
                 self.__size = (f.tell() // self.ENTRY_SIZE)
-        
-    def __len__(self):
-        return self.__size
-        
-    def __getitem__(self, val):
-        if isinstance(val, str):
-            return self._get_entry(val)
-        elif isinstance(val, int):
-            with open(self.__search_file, 'rb') as f:
-                _, position = self._read_pos(f, val)
-                return self._postings_at(position)
-        elif isinstance(val, slice):
-            with open(self.__search_file, 'rb') as f:
-                start, stop, _ = val.indices(len(self))
-                _, position = self._read_pos(f, start)
-                return self._postings_at(position, stop - start)
 
-    def keys(self):
-        yield from (k for (k, v) in self.items())
-
-    def values(self):
-        yield from (v for (k, v) in self.items())
-
-    def items(self):
-        with open(self.__index_file, 'rb') as f:
-            unpickler = pickle.Unpickler(f)
-            while True:
+    def _build_base_case_index(self, in_file):
+        tmp_index = {}
+        with open(in_file, encoding="utf8") as f:
+            for lineno, line in enumerate(f):
+                line = line.rstrip('\n')
+                tweet_id, *words = line.split(' ')
                 try:
-                    yield unpickler.load()
-                except (EOFError, pickle.UnpicklingError):
-                    break
+                    tweet_id = int(tweet_id)
+                except  ValueError:
+                    print(f"Error on line: {lineno}, {line=}")
+                    exit(-1)
 
-    def dealloc_file(self):
-        os.remove(self.__index_file)
-        os.remove(self.__search_file)
+                for word in filter(lambda x: x.rstrip('\n') != '', words):
+                    counter = tmp_index.setdefault(word, Counter())
+                    counter[tweet_id] += 1
+        
+        def make_list(l): return sorted(l.items(), key=lambda x: x[0]) 
+        def storable(w): 
+            return len(pickle.dumps((w, float('inf'), int(2**63)))) <= self.ENTRY_SIZE
+
+        index = { w: make_list(l) for w, l in tmp_index.items() if storable(w)}
+
+        N = len(index)
+
+        del tmp_index
+        with open(self.__index_file, 'wb') as f, open(self.__search_file, 'wb') as s:
+            pickler = pickle.Pickler(f)
+            for string, posts in sorted(index.items()):
+                idf = _idf(N, len(posts))
+
+                tup = (string, idf, f.tell())
+                dat = pickle.dumps(tup)
+                diff = self.ENTRY_SIZE - len(dat)
+                mod = dat + b'\0' * diff
+                assert len(mod) == self.ENTRY_SIZE # assert fixed size
+
+                s.write(mod)                
+                pickler.dump((string, posts))
+
+
+
+
+
+        # with open(self.__search_file, mode='wb') as f:
+        #     for string, (position, df) in line_index.items():  
+        #         idf = _idf(N, df)
+        #         dat = pickle.dumps((string, idf, position))
+        #         diff = self.ENTRY_SIZE - len(dat)
+        #         f.write(dat + b'\0' * diff)
+   
+        del index
+        return N
         
     def merge(self, other: 'MergeableIndex', name):
         tmp_f = name
@@ -123,66 +149,104 @@ class MergeableIndex:
 
         # push em all
 
-    def _build_base_case_index(self, in_file):
-        tmp_index = {}
-        with open(in_file, encoding="utf8") as f:
-            for lineno, line in enumerate(f):
-                tweet_id, *words = line.split(' ')
+    def dealloc_file(self):
+        os.remove(self.__index_file)
+        os.remove(self.__search_file)
+
+    def keys(self):
+        yield from (k for (k, v) in self.items())
+
+    def values(self):
+        yield from (v for (k, v) in self.items())
+
+    def items(self):
+        with open(self.__index_file, 'rb') as f:
+            unpickler = pickle.Unpickler(f)
+            while True:
                 try:
-                    tweet_id = int(tweet_id)
-                except  ValueError:
-                    print(f"Error on line: {lineno}, {line=}")
-                    exit(-1)
+                    yield unpickler.load()
+                except (EOFError, pickle.UnpicklingError):
+                    break
 
-                for word in filter(lambda x: x.rstrip('\n') != '', words):
-                    counter = tmp_index.setdefault(word, Counter())
-                    counter[tweet_id] += 1
-        
-        def make_list(l): return sorted(l.items(), key=lambda x: x[0]) 
+    def static_items(self):
+        with open(self.__search_file, 'rb') as f:
+            for i in range(len(self)):
+                bytearr = f.read(self.ENTRY_SIZE)
+                if len(bytearr) < self.ENTRY_SIZE:
+                    print(f"{bytearr=}")
+                item = pickle.loads(bytearr)
+                yield item
+    
+        with open(self.__index_file, 'rb') as f, open(self.__search_file, 'rb') as s:
+            unpickler = pickle.Unpickler(f)
+            for i in range(len(self)):
+                bytearr = s.read(self.ENTRY_SIZE)
+                string, idf, _ = pickle.loads(bytearr)
+                st, arr = unpickler.load()
+                assert(st == string)
 
-        index = { word: make_list(l) for word, l in tmp_index.items() }
-        line_index = {}
+                yield string, idf, arr
 
-        del tmp_index
-        with open(self.__index_file, mode='wb') as f:
-            pickler = pickle.Pickler(f) 
-            for a in sorted(index.items()):
-                line_index[a[0]] = f.tell()
-                pickler.dump(a)
+    def post_entry(self, string): 
+        with open(self.__search_file, 'rb') as f:
+            bin_search_index = self._make_bin_search(string, f)
+            _, _, position = bin_search_index(0, len(self))
+            if position is None:
+                return None, None
+            return self._postings_at(position)
+    
+    def static_entry(self, string):
+        with open(self.__search_file, 'rb') as f:
+            bin_search_index = self._make_bin_search(string, f)
+            return bin_search_index(0, len(self))
 
-        with open(self.__search_file, mode='wb') as f:
-            for entry in line_index.items():  
-                dat = pickle.dumps(entry)
-                diff = self.ENTRY_SIZE - len(dat)
-                f.write(dat + b'\0' * diff)
-   
-        size = len(index)
-        del index
-        return size
+    def _make_bin_search(self, string, file):
+        def bin_search(begin, end):
+            if begin >= end: return (None, None, None)
+            m = (begin + end) // 2
+            comparable, idf, position = self._read_table_pos(file, m)
+            if comparable == string: return (comparable, idf, position)
+            if comparable < string: return bin_search(m + 1, end)
+            return bin_search(begin, m)
+
+        return bin_search
+
+    def full_entry(self, string):
+        with open(self.__search_file, 'rb') as f:
+            bin_search_index = self._make_bin_search(string, f)
+            term, idf, position = bin_search_index(0, len(self))
+            if position is None:
+                return None, None, None
+
+            _term, posts = self._postings_at(position)
+            assert(string == term == _term)
+            return term, idf, posts
 
     @staticmethod
-    def _read_pos(f, p): 
+    def _read_table_pos(f, p): 
         f.seek(p * MergeableIndex.ENTRY_SIZE)
         byte_str = f.read(MergeableIndex.ENTRY_SIZE)
-        return pickle.loads(byte_str)
+        a = pickle.loads(byte_str)
+        return a
                 
     def _postings_at(self, position, number=1):
         with open(self.__index_file, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             f.seek(position)
-            ret = []
-            for _ in range(number):
-                ret.append(unpickler.load())
-            return ret
+            return unpickler.load()
 
-    def _get_entry(self, string): 
-        with open(self.__search_file, 'rb') as f:
-            def bin_search_index(s, begin, end):
-                if begin > end: return []
-                m = (begin + end) // 2
-                comparable, position = self._read_pos(f, m)
-                if comparable == s: return self._postings_at(position)
-                if comparable < s: return bin_search_index(s, m, end)
-                return bin_search_index(s, begin, m)
+    def __len__(self):
+        return self.__size
 
-            return bin_search_index(string, 0, len(self))
+    def __getitem__(self, val):
+        if isinstance(val, str):
+            return self.post_entry(val)
+        elif isinstance(val, int):
+            with open(self.__search_file, 'rb') as f:
+                _, position = self._read_table_pos(f, val)
+                return self._postings_at(position)
+        elif isinstance(val, slice):
+            with open(self.__search_file, 'rb') as f:
+                start, stop, _ = val.indices(len(self))
+                _, position = self._read_table_pos(f, start)
+                return self._postings_at(position, stop - start)

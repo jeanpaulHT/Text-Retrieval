@@ -3,8 +3,6 @@ from typing import *
 import validators
 import os
 import json
-import emoji
-import regex
 
 
 import re
@@ -14,11 +12,15 @@ def make_ascii_compliant(text):
 
 
 class Preprocessor:
-    skipped_symbols = {".", "?", "!", "¿", "<", ">", ",",
-                       "º", " ", ":", ";", "«", "»", "(", 
-                       ")", "\n", "\r", "\0", "@", "#", 
-                       '\"', '-', '_', '+', '*', '/', '|', 
+    skipped_symbols = {"?", "!", "¿", "<", ">", '^'
+                       "º", ":", ";", "«", "»", "(", 
+                       ")", "{", "}", "[", "]", "\0", "@", "#", '=' 
+                       '"', '-', '+', '*', '~'
                        '“', '”', '¡', '\'', '$', '%', '&'}
+
+    splitters = ['\r', '\n', ',', '.', '-', '_', '|', '/', '=']
+
+    sep_list = []
     _stemmer = SnowballStemmer('spanish')
 
     def __init__(self, in_dir: str, out_dir: str, stop_list_path: str):
@@ -91,7 +93,10 @@ class Preprocessor:
 
     @staticmethod
     def _parse_line(line: str, skipped: Iterable) -> list:
-        word_list = line.replace('\r', ' ').replace('\n', ' ').split(' ')
+        for splitter in Preprocessor.splitters:
+            line = line.replace(splitter, ' ')
+
+        word_list = line.split(' ')
         res = list()
         for word in word_list:
             if not word.isascii():
