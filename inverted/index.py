@@ -7,10 +7,10 @@ import shutil
 
 import math
 
-def _idf(N, df):
+def calc_idf(N, df):
     return math.log10(N/df)
 
-def _tf_idf(tf_td, idf):
+def calc_tf_idf(tf_td, idf):
     return math.log10(1 + tf_td) * idf
 
 
@@ -57,10 +57,15 @@ def merge_iters(a, b):
 class MergeableIndex:
     ENTRY_SIZE = 128
 
-    def __init__(self, index_file=None, input_file=None, build=True, no_action=False):
+    def __init__(self, 
+            index_file: Optional[str]=None,
+            input_file: Optional[str]=None, 
+            build: bool=True, 
+            no_action:bool=False
+    ):
         self.index_file = index_file
         self.search_file = None if index_file is None else index_file + '.idx'
-        self._size = 0
+        self._size: int = 0
 
         if no_action is True:
             self._size = 0
@@ -72,35 +77,33 @@ class MergeableIndex:
                 f.seek(0, 2)
                 self._size = (f.tell() // self.ENTRY_SIZE)
 
-    def _build_base_case_index(self, in_file):
+    def _build_base_case_index(self, in_file: str):
         tmp_index = {}
         with open(in_file, encoding="utf8") as f:
-            for lineno, line in enumerate(f):
+            for line in f:
                 line = line.rstrip('\n')
-                tweet_id, *words = line.split(' ')
-                try:
-                    tweet_id = int(tweet_id)
-                except ValueError:
-                    print(f"Error on line: {lineno}, {line=}")
-                    exit(-1)
+                tweet_id_str, *words = line.split(' ')
+                tweet_id = int(tweet_id_str)
 
                 for word in filter(lambda x: x.rstrip('\n') != '', words):
-                    counter = tmp_index.setdefault(word, Counter())
+                    counter: Counter = tmp_index.setdefault(word, Counter())
                     counter[tweet_id] += 1
         
-        def make_list(l): return sorted(l.items(), key=lambda x: x[0]) 
+        def make_list(l): 
+            return sorted(l.items(), key=lambda x: x[0]) 
+
         def storable(w): 
-            return len(pickle.dumps((w, float('inf'), int(2**63)))) <= self.ENTRY_SIZE
+            worst_case = (w, float('inf'), int(2**63))
+            return len(pickle.dumps(worst_case)) <= self.ENTRY_SIZE
 
         index = { w: make_list(l) for w, l in tmp_index.items() if storable(w)}
+        del tmp_index
 
         N = len(index)
-
-        del tmp_index
         with open(self.index_file, 'wb') as f, open(self.search_file, 'wb') as s:
             pickler = pickle.Pickler(f)
             for string, posts in sorted(index.items()):
-                idf = _idf(N, len(posts))
+                idf = calc_idf(N, len(posts))
 
                 tup = (string, idf, f.tell())
                 dat = pickle.dumps(tup)
@@ -227,7 +230,7 @@ class MergeableIndex:
                 bytearr = f.read(self.ENTRY_SIZE)
                 string, prev_idf, position = pickle.loads(bytearr)
                 arr = self._postings_at(position)
-                idf = _idf(len(self), len(arr))
+                idf = calc_idf(len(self), len(arr))
                 f.seek(-self.ENTRY_SIZE, 1)
 
                 dat = pickle.dumps((string, idf, position))

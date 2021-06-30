@@ -20,7 +20,6 @@ class Preprocessor:
 
     splitters = ['\r', '\n', ',', '.', '-', '_', '|', '/', '=']
 
-    sep_list = []
     _stemmer = SnowballStemmer('spanish')
 
     def __init__(self, in_dir: str, out_dir: str, stop_list_path: str):

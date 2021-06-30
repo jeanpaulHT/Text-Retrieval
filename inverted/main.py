@@ -1,5 +1,6 @@
-from index import MergeableIndex, Index
-from preprocessor import Preprocessor, make_ascii_compliant
+from index import Index
+from preprocessor import Preprocessor
+from queries import QueryEngine
 from os import listdir
 from os.path import isfile, join
 
@@ -26,10 +27,9 @@ def main():
         tmp_dir=index_tmp_dir, 
         build=False              # change this to actually build
     )
-
-    print(len(index))
-    for i in index.all_items():
-        print(str(i)[:110])
+    
+    engine = QueryEngine(preprocessor, index, 5)
+    engine.search("muere martin vizcarra")
 
 
 if __name__ == "__main__":
