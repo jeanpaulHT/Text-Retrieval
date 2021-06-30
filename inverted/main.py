@@ -1,4 +1,4 @@
-from index import MergeableIndex
+from index import MergeableIndex, Index
 from preprocessor import Preprocessor, make_ascii_compliant
 from os import listdir
 from os.path import isfile, join
@@ -20,20 +20,12 @@ def main():
     preprocessor = Preprocessor(text_dir, out_dir, stop_list)    
     out_files = preprocessor._locate(json_files)
 
-    print(out_files)
+    # index = Index(index_file, out_files, index_tmp_dir)
+    index = MergeableIndex(index_file, build=False)
 
-    for out_file in out_files:
-        out_name = out_file.lstrip(out_dir + '/')
-
-        index = MergeableIndex(
-            index_file=index_tmp_dir + '/' + out_name + '.dat', 
-            input_file=out_file, 
-            build=True
-        )
-        
-
-        print(f"index:\n", index.post_entry('cmo'))
-
+    print(len(index))
+    while True:
+        print(str(index['cmo'])[:110])
 
 
 if __name__ == "__main__":
