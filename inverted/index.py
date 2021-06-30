@@ -1,4 +1,3 @@
-from nltk.stem import SnowballStemmer
 from typing import *
 import os
 from collections import Counter

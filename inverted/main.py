@@ -4,9 +4,6 @@ from queries import QueryEngine
 from os import listdir
 from os.path import isfile, join
 
-
-import pickle
-
 def main():
     mypath = "texts/data_elecciones"
     json_files = [f for f in listdir(mypath) if isfile(join(mypath, f))]

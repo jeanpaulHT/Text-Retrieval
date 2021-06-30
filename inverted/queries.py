@@ -9,9 +9,6 @@ def cos_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
-
-
-
 class QueryEngine:
     def __init__(self, preprocessor: Preprocessor, index: Index, depth: int):
         self.preprocessor = preprocessor
@@ -55,7 +52,5 @@ class QueryEngine:
         }
     
         result = heapq.nlargest(self.depth, score, key=score.get)
-        print(result)
-        print(*(score.get(x) for x in result))
         return result
 
