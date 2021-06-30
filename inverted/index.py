@@ -3,7 +3,7 @@ from typing import *
 import os
 from collections import Counter
 import pickle
-from cached_property import cached_property
+import shutil
 
 import math
 
@@ -60,17 +60,17 @@ class MergeableIndex:
     def __init__(self, index_file=None, input_file=None, build=True, no_action=False):
         self.index_file = index_file
         self.search_file = None if index_file is None else index_file + '.idx'
-        self.__size = 0
+        self._size = 0
 
         if no_action is True:
-            self.__size = 0
+            self._size = 0
         elif build is True:
             print(f'Building index for {index_file}')
-            self.__size = self._build_base_case_index(input_file)
+            self._size = self._build_base_case_index(input_file)
         else:
             with open(self.search_file, 'rb') as f:
                 f.seek(0, 2)
-                self.__size = (f.tell() // self.ENTRY_SIZE)
+                self._size = (f.tell() // self.ENTRY_SIZE)
 
     def _build_base_case_index(self, in_file):
         tmp_index = {}
@@ -162,7 +162,8 @@ class MergeableIndex:
                     print(f"{bytearr=}")
                 item = pickle.loads(bytearr)
                 yield item
-    
+
+    def all_items(self):
         with open(self.index_file, 'rb') as f, open(self.search_file, 'rb') as s:
             unpickler = pickle.Unpickler(f)
             for i in range(len(self)):
@@ -203,7 +204,7 @@ class MergeableIndex:
         a = pickle.loads(byte_str)
         return a
                 
-    def _postings_at(self, position, number=1):
+    def _postings_at(self, position):
         with open(self.index_file, 'rb') as f:
             unpickler = pickle.Unpickler(f)
             f.seek(position)
@@ -220,8 +221,24 @@ class MergeableIndex:
 
         return bin_search
 
+    def _recalculate_idf(self):
+        with open(self.search_file, 'r+b') as f:
+            for i in range(len(self)):
+                bytearr = f.read(self.ENTRY_SIZE)
+                string, prev_idf, position = pickle.loads(bytearr)
+                arr = self._postings_at(position)
+                idf = _idf(len(self), len(arr))
+                f.seek(-self.ENTRY_SIZE, 1)
+
+                dat = pickle.dumps((string, idf, position))
+                diff = self.ENTRY_SIZE - len(dat)
+                mod = dat + b'\0' * diff
+                assert len(mod) == self.ENTRY_SIZE # assert fixed size
+
+                f.write(mod)
+
     def __len__(self):
-        return self.__size
+        return self._size
 
     def __getitem__(self, val):
         if isinstance(val, str):
@@ -236,19 +253,21 @@ class MergeableIndex:
                 _, position = self._read_table_pos(f, start)
                 return self._postings_at(position, stop - start)
 
-class Index(MergeableIndex):
-    def __init__(self, index_file, files, tmp_dir):
-        super().__init__(index_file=index_file, build=False, no_action=True)
-        self.tmp_dir = tmp_dir
-        self._build_all_and_merge(files)
 
-    def _build_all_and_merge(self, files):
+class Index(MergeableIndex):
+    def __init__(self, index_file=None, files=None, tmp_dir=None, build=True):
+        no_action = True if build else False
+        super().__init__(index_file=index_file, build=False, no_action=no_action)
+        if build:
+            self._build_all_and_merge(files, tmp_dir)
+
+    def _build_all_and_merge(self, files, tmp_dir):
         indexes = []
         
         filenames = [file.split('/')[-1] for file in files]
         for filename, file in zip(filenames, files):
             tmp = MergeableIndex(
-                index_file=f"{self.tmp_dir}/{filename}.dat", 
+                index_file=f"{tmp_dir}/{filename}.dat", 
                 input_file=file,
                 build=True
             )
@@ -269,7 +288,7 @@ class Index(MergeableIndex):
                 if second is None: 
                     next_indexes.append(first)
                     break
-                new_index = first.merge(second, f"{self.tmp_dir}/merge_{i}.dat")  
+                new_index = first.merge(second, f"{tmp_dir}/merge_{i}.dat")  
                 i += 1
                 next_indexes.append(new_index)    
                 first.dealloc_file()
@@ -278,10 +297,13 @@ class Index(MergeableIndex):
             indexes = next_indexes
 
         result: MergeableIndex = indexes[0]
+        print(len(result))
+        result._recalculate_idf()
+        print(len(result))
 
-        os.rename(result.index_file, self.index_file)
-        os.rename(result.search_file, self.search_file)
-        self.__size = len(result)
+        shutil.move(result.index_file, self.index_file)
+        shutil.move(result.search_file, self.search_file)
+        self._size = len(result)
         
 
     

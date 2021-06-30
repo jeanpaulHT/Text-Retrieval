@@ -20,12 +20,16 @@ def main():
     preprocessor = Preprocessor(text_dir, out_dir, stop_list)    
     out_files = preprocessor._locate(json_files)
 
-    # index = Index(index_file, out_files, index_tmp_dir)
-    index = MergeableIndex(index_file, build=False)
+    index = Index(
+        index_file=index_file, 
+        files=out_files, 
+        tmp_dir=index_tmp_dir, 
+        build=False              # change this to actually build
+    )
 
     print(len(index))
-    while True:
-        print(str(index['cmo'])[:110])
+    for i in index.all_items():
+        print(str(i)[:110])
 
 
 if __name__ == "__main__":
