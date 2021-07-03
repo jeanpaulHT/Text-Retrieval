@@ -34,8 +34,13 @@ tracklist = {
 }
 """
 
+# tracklist = {
+#     'peter castle': ['Pedro Castillo', '@PedroCastilloTe']
+#     # 'señora k': ['Keiko Fujimori', '@KeikoFujimori'],
+#     # 'Mi Fiscal':['Jose Domingo Perez', '@JoseDomingoPer']
+# }
+#
+
 tracklist = {
-    'peter castle': ['Pedro Castillo', '@PedroCastilloTe'],
-    'señora k': ['Keiko Fujimori', '@KeikoFujimori'],
-    'Mi Fiscal':['Jose Domingo Perez', '@JoseDomingoPer']
+    'covid': ['covid',  'covid-19']
 }

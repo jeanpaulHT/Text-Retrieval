@@ -35,15 +35,22 @@ if __name__ == '__main__':
     #This handles Twitter authetification and the connection to Twitter Streaming API
     auth = tweepy.OAuthHandler(params.consumer_key, params.consumer_secret)
     auth.set_access_token(params.access_token, params.access_token_secret)
+    # api = tweepy.API(auth)
+    #
+    # id =  1411077470607007744
+    # print(id)
+    # tweet = api.get_status(id)
+    # print(tweet)
+
     stream = tweepy.Stream(auth, listener)
-    
+
     listaTrack = []
-    for k, v in params.tracklist.items(): 
+    for k, v in params.tracklist.items():
         listaTrack = listaTrack + v
 
     while(True):
         try:
-            stream.filter(track=listaTrack)
+            stream.filter(track=listaTrack, languages= [ "es" ] )
         except:
             print("---- CONNECTION ERROR ----")
             pass

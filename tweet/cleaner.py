@@ -20,13 +20,13 @@ def parse_file(file_in, file_out):
         if line != "":
             try:
                 decoded = json.loads(line)
-                cleanLine.update({"id" : decoded['id']})
+                cleanLine.update({"id" : decoded['id_str']})
                 cleanLine.update({"date" : decoded['created_at']})
                 if decoded.get('extended_tweet') is not None: 
                     cleanLine.update({"text": encodeText(decoded['extended_tweet']['full_text'])})
                 else:
                     cleanLine.update({"text": encodeText(decoded['text'])})                
-                cleanLine.update({"user_id" : decoded['user']['id']})   
+                cleanLine.update({"user_id" : decoded['user']['id_str']})
                 cleanLine.update({"user_name" : '@' + decoded['user']['screen_name']})   
 
                 if decoded.get('place') is not None:                    
@@ -36,13 +36,16 @@ def parse_file(file_in, file_out):
 
                 if decoded.get('retweeted_status') is not None: 
                     cleanLine.update({"retweeted" : True })
-                    cleanLine.update({"RT_id" : decoded['retweeted_status']['id']})
+                    cleanLine.update({"id" : decoded['retweeted_status']['id_str']})
+                    cleanLine.update({"RT_id": decoded['id_str']})
                     if decoded.get('retweeted_status').get('extended_tweet') is not None:
                         cleanLine.update({"RT_text" : encodeText(decoded['retweeted_status']['extended_tweet']['full_text']) })
                     else:
                         cleanLine.update({"RT_text" :  encodeText(decoded['retweeted_status']['text']) })
-                    cleanLine.update({"RT_user_id" :  decoded['retweeted_status']['user']['id'] })
-                    cleanLine.update({"RT_user_name" : '@' + decoded['retweeted_status']['user']['screen_name'] })   
+                    cleanLine.update({"user_id" :  decoded['retweeted_status']['user']['id_str'] })
+                    cleanLine.update({"RT_user_id": decoded['user']['id_str']})
+                    cleanLine.update({"RT_user_name": '@' + decoded['user']['screen_name']})
+                    cleanLine.update({"user_name" : '@' + decoded['retweeted_status']['user']['screen_name'] })
                 else:
                     cleanLine.update({"retweeted" : False})   
                 
