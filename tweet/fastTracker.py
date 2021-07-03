@@ -7,8 +7,8 @@ import json
 
 def main():
     keyword = "covid"
-    maxTweets = 1000
-    tweetFile = 500
+    maxTweets = 20000
+    tweetFile = 1000
     file = 0
 
     while (file <= maxTweets / tweetFile):
