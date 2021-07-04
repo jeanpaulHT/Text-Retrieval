@@ -11,9 +11,7 @@ def calc_idf(N, df):
 
 def calc_tf_idf(tf_td, idf):
     return math.log10(1 + tf_td) * idf
-
-
-
+    
 def merge_posts(a, b):
     i, j = iter(a), iter(b)
     val_i, val_j = next(i, None), next(j, None)

@@ -17,17 +17,17 @@ def main():
 
     preprocessor = Preprocessor(text_dir, out_dir, stop_list)
     out_files = preprocessor._locate(json_files)
-    # preprocessor.preprocess(json_files)
+    # out_files = preprocessor.preprocess(json_files)
 
     index = Index(
         index_file=index_file,
         files=out_files,
         tmp_dir=index_tmp_dir,
-        build=True              # change this to actually build
+        build=False              # change this to actually build
     )
     # #
-    # engine = QueryEngine(preprocessor, index, 5)
-    # engine.search("muere martin vizcarra")
+    engine = QueryEngine(preprocessor, index)
+    engine.search("muere martin vizcarra", 5)
 
 
 if __name__ == "__main__":
