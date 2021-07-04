@@ -1,7 +1,7 @@
 import React from 'react';
 
 export function TopicItem({topic, toggleTopic}) {
-    const{id, task, completed} = topic;
+    const{id, task, selected} = topic;
 
     const handleTopicClick = () => {
         toggleTopic(id);

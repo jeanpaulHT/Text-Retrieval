@@ -6,11 +6,12 @@ const KEY = "topicApp.topics";
 
 export function App() {
     const [topics, setTopics] = useState([
-        {id: 1, task: "Topic 1", completed: false}
+        {id: 1, task: "covid", selected: false}
     ]);
 
     const topicTaskRef = useRef();
 
+    // preserve topics
     useEffect(() => {
         const storedTopics = JSON.parse(localStorage.getItem(KEY));
         if(storedTopics) {
@@ -22,10 +23,12 @@ export function App() {
         localStorage.setItem(KEY, JSON.stringify(topics));
     }, [topics]);
 
+
+    // topic functions
     const toggleTopic = (id) => {
         const newTopics = [...topics];
         const topic = newTopics.find((topic) => topic.id === id);
-        topic.completed = !topic.completed;
+        topic.selected = !topic.selected;
         setTopics(newTopics);
     };
 
@@ -34,14 +37,14 @@ export function App() {
         if (task === '') return;
 
         setTopics((prevTopics) => {
-            return [...prevTopics, {id: uuidv4(), task, completed: false}]
+            return [...prevTopics, {id: uuidv4(), task, selected: false}]
         });
 
         topicTaskRef.current.value = null;
     };
 
     const handleClearAll = () => {
-        const newTopics = topics.filter((topic) => !topic.completed);
+        const newTopics = topics.filter((topic) => !topic.selected);
         setTopics(newTopics);
     };
 
@@ -53,7 +56,7 @@ export function App() {
             <input ref={topicTaskRef} type="text" placeholder="Agregar tema"/>
             <button onClick={handleTopicAdd}>+</button>
             <button onClick={handleClearAll}>🚮</button>
-            {/* <div>{topics.filter((topic) => !topic.completed).length} temas seleccionados.</div> */}
+            {/* <div>{topics.filter((topic) => !topic.selected).length} temas seleccionados.</div> */}
             <h2>Queries:</h2>
             <input type="text" placeholder="Insertar query"/>
             <button >Buscar</button>
