@@ -37,7 +37,7 @@ if __name__ == '__main__':
     auth.set_access_token(params.access_token, params.access_token_secret)
     api = tweepy.API(auth)
 
-    id =  1338634876342431700
+    id =  1338630171440553984
     print(id)
     tweet = api.get_status(id)
     print(tweet)

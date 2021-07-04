@@ -7,7 +7,6 @@ import json
 
 import re
 
-flag = False
 
 
 def make_ascii_compliant(text):
@@ -19,7 +18,7 @@ class Preprocessor:
                        "º", ":", ";", "«", "»", "(", 
                        ")", "{", "}", "[", "]", "\0", "@", "#", '=' 
                        '"', '-', '+', '*', '~'
-                       '“', '”', '¡', '\'', '$', '%', '&'}
+                       '“', '”', '¡', '\'', '$', '%', '&', '"'}
 
     splitters = ['\r', '\n', ',', '-', '_', '|',  '/', '=', '.']
 
@@ -66,8 +65,7 @@ class Preprocessor:
             json_data = json.load(f_in)
 
             for lineno, tweet in enumerate(json_data, 1):
-                if tweet['id'] == "1338633754684792832":
-                    flag = True
+
                 # extracting  and parsing tweet text and erasing skipped symbols0
                 res = str(tweet['id']) + ' '
                 line = Preprocessor._parse_line(tweet['content'], self.skipped_symbols)
