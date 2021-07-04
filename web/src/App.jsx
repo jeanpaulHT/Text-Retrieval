@@ -1,59 +1,59 @@
 import React, {Fragment, useState, useRef, useEffect} from 'react'
 import {v4 as uuidv4} from 'uuid'
-import { TodoList } from './components/TodoList'
+import { TopicList } from './components/TopicList'
 
-const KEY = "todoApp.todos";
+const KEY = "topicApp.topics";
 
 export function App() {
-    const [todos, setTodos] = useState([
+    const [topics, setTopics] = useState([
         {id: 1, task: "Topic 1", completed: false}
     ]);
 
-    const todoTaskRef = useRef();
+    const topicTaskRef = useRef();
 
     useEffect(() => {
-        const storedTodos = JSON.parse(localStorage.getItem(KEY));
-        if(storedTodos) {
-            setTodos(storedTodos);
+        const storedTopics = JSON.parse(localStorage.getItem(KEY));
+        if(storedTopics) {
+            setTopics(storedTopics);
         }
     }, []);
 
     useEffect(() => {
-        localStorage.setItem(KEY, JSON.stringify(todos));
-    }, [todos]);
+        localStorage.setItem(KEY, JSON.stringify(topics));
+    }, [topics]);
 
-    const toggleTodo = (id) => {
-        const newTodos = [...todos];
-        const todo = newTodos.find((todo) => todo.id === id);
-        todo.completed = !todo.completed;
-        setTodos(newTodos);
+    const toggleTopic = (id) => {
+        const newTopics = [...topics];
+        const topic = newTopics.find((topic) => topic.id === id);
+        topic.completed = !topic.completed;
+        setTopics(newTopics);
     };
 
-    const handleTodoAdd = () => {
-        const task = todoTaskRef.current.value;
+    const handleTopicAdd = () => {
+        const task = topicTaskRef.current.value;
         if (task === '') return;
 
-        setTodos((prevTodos) => {
-            return [...prevTodos, {id: uuidv4(), task, completed: false}]
+        setTopics((prevTopics) => {
+            return [...prevTopics, {id: uuidv4(), task, completed: false}]
         });
 
-        todoTaskRef.current.value = null;
+        topicTaskRef.current.value = null;
     };
 
     const handleClearAll = () => {
-        const newTodos = todos.filter((todo) => !todo.completed);
-        setTodos(newTodos);
+        const newTopics = topics.filter((topic) => !topic.completed);
+        setTopics(newTopics);
     };
 
     return (
         <Fragment>
             <h1>Buscador de Tweets</h1>
             <h2>Temas:</h2>
-            <TodoList todos={todos} toggleTodo={toggleTodo}/>
-            <input ref={todoTaskRef} type="text" placeholder="Agregar tema"/>
-            <button onClick={handleTodoAdd}>+</button>
+            <TopicList topics={topics} toggleTopic={toggleTopic}/>
+            <input ref={topicTaskRef} type="text" placeholder="Agregar tema"/>
+            <button onClick={handleTopicAdd}>+</button>
             <button onClick={handleClearAll}>🚮</button>
-            {/* <div>Te quedan {todos.filter((todo) => !todo.completed).length} tareas por terminar.</div> */}
+            {/* <div>{topics.filter((topic) => !topic.completed).length} temas seleccionados.</div> */}
             <h2>Queries:</h2>
             <input type="text" placeholder="Insertar query"/>
             <button >Buscar</button>
