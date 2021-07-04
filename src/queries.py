@@ -1,7 +1,6 @@
 from index import Index, calc_tf_idf
 from preprocessor import Preprocessor
 from collections import Counter
-import pandas as pd
 import numpy as np
 import heapq
 

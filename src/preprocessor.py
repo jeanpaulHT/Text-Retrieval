@@ -7,6 +7,9 @@ import json
 
 import re
 
+flag = False
+
+
 def make_ascii_compliant(text):
     return ''.join((c for c in text if len(c.encode()) == 1))
 
@@ -18,7 +21,7 @@ class Preprocessor:
                        '"', '-', '+', '*', '~'
                        '“', '”', '¡', '\'', '$', '%', '&'}
 
-    splitters = ['\r', '\n', ',', '.', '-', '_', '|', '/', '=']
+    splitters = ['\r', '\n', ',', '-', '_', '|',  '/', '=', '.']
 
     _stemmer = SnowballStemmer('spanish')
 
@@ -63,19 +66,13 @@ class Preprocessor:
             json_data = json.load(f_in)
 
             for lineno, tweet in enumerate(json_data, 1):
-                # extracting  and parsing tweet text and erasing skipped symbols
+                if tweet['id'] == "1338633754684792832":
+                    flag = True
+                # extracting  and parsing tweet text and erasing skipped symbols0
                 res = str(tweet['id']) + ' '
-                if tweet.get('RT_text') is not None:
-                    line = Preprocessor._parse_line(tweet['RT_text'], self.skipped_symbols)
-                    tweet['RT_text'] = self._preprocess_text(line)
-                    res += tweet['RT_text']
-                elif tweet.get('text') is not None:
-                    line = Preprocessor._parse_line(tweet['text'], self.skipped_symbols)
-                    tweet['text'] = self._preprocess_text(line)
-                    res += tweet['text']
-                else:
-                    print(f'ERROR: {in_path=} is not compliant')
-                    exit(-1)
+                line = Preprocessor._parse_line(tweet['content'], self.skipped_symbols)
+
+                res+= self._preprocess_text(line)
 
                 f_out.write(res + '\n')
 
@@ -92,12 +89,16 @@ class Preprocessor:
 
     @staticmethod
     def _parse_line(line: str, skipped: Iterable) -> list:
+
+        line = re.sub(r"http\S+", "", line)
+
         for splitter in Preprocessor.splitters:
             line = line.replace(splitter, ' ')
 
         word_list = line.split(' ')
         res = list()
         for word in word_list:
+
             if not word.isascii():
                 word = make_ascii_compliant(word)
 

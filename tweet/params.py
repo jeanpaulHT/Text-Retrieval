@@ -6,7 +6,7 @@ consumer_key = "zjKw6LU9PPXyJrhrHj4Nlr92i"
 consumer_secret = "k0f2M8rGHySoUICYDGJfbdwf4hLyvgVL8PlMXtJHk8ACmsdKSC"
 
 #destination folder for raw tweets 
-folder_path = "raw/"
+folder_path = "../texts/raw/"
 #destination folder for clean tweets
 clean_path = "clean/"
 
