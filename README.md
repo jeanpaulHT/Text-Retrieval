@@ -73,9 +73,9 @@ El procedimiento puede verse en la siguiente imagen:
 ## Tiempos de ejecucion
 Para una cantidad de tweets igual a:  20 000
 
-- preprocess: 18.16 segundos
-- recoleccion de tweets: 5 minutos
-- tiempod de ejecucion:
+- Preprocessing: 18.16 segundos
+- Recoleccion de tweets: 5 minutos
+- Tiempos de ejecución:
     - 0.05 segundos (caso promedio)
     - 3.2714511 segundos (peor caso)
 
