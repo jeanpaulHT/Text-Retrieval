@@ -63,7 +63,7 @@ class QueryEngine:
         query = self.split_query(queryText, self.preprocessor)
         tf_terms_q = Counter(query)
         score = {}
-
+        
         for term in query:
             _, idf, posting_list = self.index.full_entry(term)
             tf_tq = tf_terms_q[term]
@@ -74,13 +74,14 @@ class QueryEngine:
                 score.setdefault(document, 0)
                 score[document] += w_td * w_tq
         
+        norms = {}
         for document in score.keys():
-            try:
-                score[document] = score[document] / self.index.get_norm(document)
-            except Exception:
-                print("Error: ", f"{document=}")
-                exit(-1)
-        
+            if document not in norms:
+                norms[document] = self.index.get_norm(document)
+
+        for document in score.keys():
+            score[document] = score[document] / norms[document]
+            
         return heapq.nlargest(k, score.keys(), key=lambda x: score[x])
         
 

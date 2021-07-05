@@ -305,6 +305,10 @@ class Index(MergeableIndex):
         if build:
             self._build_index(files, tmp_dir)
             self._build_norm_file(norm_files, tmp_dir=tmp_dir)
+        
+        with open(self.norm_file, 'rb') as nf:
+            nf.seek(0, 2)
+            self.norm_size = nf.tell() // self.NORM_ENTRY_SIZE
 
     def _build_index(self, files, tmp_dir):
         indexes: List[MergeableIndex] = []
@@ -358,11 +362,11 @@ class Index(MergeableIndex):
                     break
             
                 new_norm_file = self.merge_norm_files(first, second, f"{tmp_dir}/norm_{i}.dat")
-                print(f"Merged norm files {first} and {second} into {new_norm_file} ")
+                print(f"Merged {first} and {second} into {new_norm_file} ")
                 next_norms.append(new_norm_file)
                 i += 1
-                # os.remove(first)
-                # os.remove(second)
+                os.remove(first)
+                os.remove(second)
             norms = next_norms
 
         norm_src: str = norms[0]
@@ -377,32 +381,30 @@ class Index(MergeableIndex):
                 dump = dump.ljust(self.NORM_ENTRY_SIZE, b'\0')
                 dst.write(dump)
 
-                
+        os.remove(norm_src)
+        print("Finished building norm files")
+
+    @staticmethod
+    def read_norm_entry(nf, pos):
+        nf.seek(pos * Index.NORM_ENTRY_SIZE)
+        bytearr = nf.read(Index.NORM_ENTRY_SIZE)
+        return pickle.loads(bytearr)
+        
+    @staticmethod
+    def bin_search(nf, document, begin, end):
+        while begin < end:
+            m = (begin + end) // 2
+            doc_id, norm = Index.read_norm_entry(nf, m)
+            if doc_id == document: return norm
+            elif doc_id < document: begin = m + 1
+            else: end = m
+
+        return 0            
             
     def get_norm(self, document):
         with open(self.norm_file, 'rb') as nf:
-            nf.seek(0, 2)
-            size = nf.tell() 
-            size = size // self.NORM_ENTRY_SIZE
-            nf.seek(0, 0)
-
-            def read_norm_entry(pos):
-                nf.seek(pos * self.NORM_ENTRY_SIZE)
-                bytearr = nf.read(self.NORM_ENTRY_SIZE)
-                load = pickle.loads(bytearr)
-                return load
-                
-            def bin_search(begin, end):
-                while begin < end:
-                    m = (begin + end) // 2
-                    doc_id, norm = read_norm_entry(m)
-                    if doc_id == document: return norm
-                    elif doc_id < document: begin = m + 1
-                    else: end = m
-            
-                return 0
-
-            return bin_search(0, size)
+            size = self.norm_size
+            return self.bin_search(nf, document, 0, size)
 
             
     

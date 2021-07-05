@@ -30,9 +30,8 @@ def get_query_engine(preprocess=True, rebuild=True):
 
 
 def main():
-    engine = get_query_engine(preprocess=False, rebuild=True)
+    engine = get_query_engine(preprocess=False, rebuild=False)
     print(engine.search("covid", 5))
-
 
 if __name__ == "__main__":
     main()
