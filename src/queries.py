@@ -63,7 +63,7 @@ class QueryEngine:
         query = self.split_query(queryText, self.preprocessor)
         tf_terms_q = Counter(query)
         score = {}
-        
+
         for term in query:
             _, idf, posting_list = self.index.full_entry(term)
             tf_tq = tf_terms_q[term]

@@ -30,8 +30,26 @@ def get_query_engine(preprocess=True, rebuild=True):
 
 
 def main():
-    engine = get_query_engine(preprocess=False, rebuild=False)
-    print(engine.search("covid", 5))
+    import cProfile
+    import pstats
+
+    engine = None
+    with cProfile.Profile() as createEngine:
+        engine = get_query_engine(preprocess=False, rebuild=False)
+    
+    stats = pstats.Stats(createEngine)
+    stats.sort_stats(pstats.SortKey.TIME)
+    stats.print_stats()
+
+    query = "muere martin vizcarra"
+
+    with cProfile.Profile() as searchInEngine:
+        print(f"{query=}, result={engine.search(query, 5)}")
+
+
+    stats = pstats.Stats(searchInEngine)
+    stats.sort_stats(pstats.SortKey.TIME)
+    stats.print_stats()
 
 if __name__ == "__main__":
     main()
