@@ -61,7 +61,13 @@ DocI: normI
 
 ## Manejo de memoria secundaria
 
+Como no se puede leer todos los índices de todos los archivos a la vez, creamos inicialmente bloques pequeños, que denominamos MergeableIndex, que contienen la data separadamente. Estos indices luego pueden ser combinados utilizando la función MergeableIndex.merge. Este proceso de merge se realiza hasta que solo quede un indice final. 
 
+Inicialmente, se utilizan los files generados por el preprocessor para generar los MergeableIndex iniciales. Luego, se agregan todos los indices parciales a una lista. Para cada par de elementos adyacentes, se llama a merge y se genera un upper level index. Una vez que ya no quedan mas indices que no puedan ser mergeados, se reemplaza la lista por la nueva capa. Esto se repite hasta que solo quede el indice final. Asumiendo que existan N indices iniciales (bloques) de tamaño B, el indice final se reconstruye en N * B * lg(N).
+
+El procedimiento puede verse en la siguiente imagen:
+
+(...)
 
 ## Tiempos de ejecucion
 
