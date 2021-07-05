@@ -1,5 +1,5 @@
-from index import Index, calc_tf_idf
-from preprocessor import Preprocessor
+from src.index import Index, calc_tf_idf
+from src.preprocessor import Preprocessor
 from collections import Counter
 # import numpy as np
 import heapq
@@ -59,7 +59,7 @@ class QueryEngine:
         return q_process
 
         
-    def search(self, queryText, k):
+    def search(self, queryText, k = 5):
         query = self.split_query(queryText, self.preprocessor)
         tf_terms_q = Counter(query)
         score = {}
@@ -82,7 +82,9 @@ class QueryEngine:
         for document in score.keys():
             score[document] = score[document] / norms[document]
             
-        return heapq.nlargest(k, score.keys(), key=lambda x: score[x])
+        a = list(map(str, heapq.nlargest(k, score.keys(), key=lambda x: score[x])))
+        print(a)
         
-
+        return a
+        
 
