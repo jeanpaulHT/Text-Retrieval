@@ -20,20 +20,18 @@ def get_out_and_norm_files(preprocessor: Preprocessor, json_files, rebuild):
     else:
         return preprocessor._locate(json_files)
 
-def get_query_engine(rebuild=True):
+def get_query_engine(preprocess=True, rebuild=True):
     preprocessor = Preprocessor(text_dir, out_dir, stop_list)
     
-    out_files, norm_files = get_out_and_norm_files(preprocessor, json_files, rebuild)
-    
+    out_files, norm_files = get_out_and_norm_files(preprocessor, json_files, preprocess)
     index = Index(index_file,out_files, norm_files, index_tmp_dir, rebuild)
 
     return QueryEngine(preprocessor, index)
 
 
 def main():
-    engine = get_query_engine(rebuild=True)
-    print(engine.search("muere martin vizcarra", 5))
-
+    engine = get_query_engine(preprocess=False, rebuild=False)
+    print(engine.search("covid", 5))
 
 if __name__ == "__main__":
     main()
