@@ -9,7 +9,7 @@ app.static_folder = "static"
 
 @app.route("/search", methods=['POST'])
 def search():
-    engine = get_query_engine(build=False)
+    engine = get_query_engine(preprocess=False, rebuild=False)
     if (not request.is_json):
         c = json.loads(request.data)['values']
     else:

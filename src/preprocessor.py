@@ -7,6 +7,8 @@ import json
 
 import re
 
+
+
 def make_ascii_compliant(text):
     return ''.join((c for c in text if len(c.encode()) == 1))
 
@@ -16,9 +18,9 @@ class Preprocessor:
                        "º", ":", ";", "«", "»", "(", 
                        ")", "{", "}", "[", "]", "\0", "@", "#", '=' 
                        '"', '-', '+', '*', '~'
-                       '“', '”', '¡', '\'', '$', '%', '&'}
+                       '“', '”', '¡', '\'', '$', '%', '&', '"'}
 
-    splitters = ['\r', '\n', ',', '.', '-', '_', '|', '/', '=']
+    splitters = ['\r', '\n', ',', '-', '_', '|',  '/', '=', '.']
 
     _stemmer = SnowballStemmer('spanish')
 
@@ -31,23 +33,33 @@ class Preprocessor:
 
     def preprocess(self, files: Iterable[str]):
         out_files = []
+        norm_files = []
         n = 0
         for file in files:
             print(f"{n}:preprocess for {file} starting......")
             in_path, out_path = self.in_dir + file, self.out_dir + file.split('.')[0]
+            norm_path = f"{self.out_dir}../norm/" + str(file.split('.')[0])
+
             out_files.append(out_path)
-            self._preprocess_file(in_path, out_path)
+            norm_files.append(norm_path)
+
+            self._preprocess_file(in_path, out_path, norm_path)
             print(f"preprocess for {file} done")
             n += 1
         print("preprocess completed")
-        return out_files
+        return out_files, norm_files
 
     def _locate(self, files: Iterable[str]):
         out_files = []
+        norm_files = []
         for file in files:
             in_path, out_path = self.in_dir + file, self.out_dir + file.split('.')[0]
+            norm_path = f"{self.out_dir}../norm/" + str(file.split('.')[0])
+
             out_files.append(out_path)
-        return out_files
+            norm_files.append(norm_path)
+
+        return out_files, norm_files
 
     def _preprocess_text(self, line):
         def gen():
@@ -58,24 +70,22 @@ class Preprocessor:
 
         return ' '.join(gen())
 
-    def _preprocess_file(self, in_path: str, out_path: str) -> None:
-        with open(in_path, encoding="utf-8") as f_in, open(out_path, "w+", encoding="utf-8") as f_out:
+    def _preprocess_file(self, in_path: str, out_path: str, norm_path : str) -> None:
+        with open(in_path, encoding="utf-8") as f_in, open(out_path, "w+", encoding="utf-8") as f_out, open(norm_path , "w+", encoding="utf-8") as n_out:
             json_data = json.load(f_in)
 
             for lineno, tweet in enumerate(json_data, 1):
-                # extracting  and parsing tweet text and erasing skipped symbols
+
+                # extracting  and parsing tweet text and erasing skipped symbols0
                 res = str(tweet['id']) + ' '
-                if tweet.get('RT_text') is not None:
-                    line = Preprocessor._parse_line(tweet['RT_text'], self.skipped_symbols)
-                    tweet['RT_text'] = self._preprocess_text(line)
-                    res += tweet['RT_text']
-                elif tweet.get('text') is not None:
-                    line = Preprocessor._parse_line(tweet['text'], self.skipped_symbols)
-                    tweet['text'] = self._preprocess_text(line)
-                    res += tweet['text']
-                else:
-                    print(f'ERROR: {in_path=} is not compliant')
-                    exit(-1)
+                line = Preprocessor._parse_line(tweet['content'], self.skipped_symbols)
+                line = self._preprocess_text(line)
+                num = len(re.findall(r'\w+', line))
+
+                n_out.write(f"{res}{num}" + '\n')
+
+                res+= line
+
 
                 f_out.write(res + '\n')
 
@@ -92,12 +102,16 @@ class Preprocessor:
 
     @staticmethod
     def _parse_line(line: str, skipped: Iterable) -> list:
+
+        line = re.sub(r"http\S+", "", line)
+
         for splitter in Preprocessor.splitters:
             line = line.replace(splitter, ' ')
 
         word_list = line.split(' ')
         res = list()
         for word in word_list:
+
             if not word.isascii():
                 word = make_ascii_compliant(word)
 
