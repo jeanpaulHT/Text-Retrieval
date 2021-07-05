@@ -10,8 +10,8 @@ import heapq
 
 class QueryEngine:
     def __init__(self, preprocessor: Preprocessor, index: Index):
-        self.preprocessor = preprocessor
-        self.index = index
+        self.preprocessor: Preprocessor = preprocessor
+        self.index: Index= index
 
     # def search(self, query):
     #     q_parse = self.preprocessor._parse_line(
@@ -77,6 +77,7 @@ class QueryEngine:
         for document in score.keys():
             score[document] = score[document] / self.index.get_norm(document)
         
-        return heapq.nlargest(k, score.values())
+        return heapq.nlargest(k, score.keys(), key=lambda x: score[x])
+        
 
 

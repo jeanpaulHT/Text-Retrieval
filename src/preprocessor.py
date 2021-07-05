@@ -33,24 +33,33 @@ class Preprocessor:
 
     def preprocess(self, files: Iterable[str]):
         out_files = []
+        norm_files = []
         n = 0
         for file in files:
             print(f"{n}:preprocess for {file} starting......")
             in_path, out_path = self.in_dir + file, self.out_dir + file.split('.')[0]
             norm_path = f"{self.out_dir}../norm/" + str(file.split('.')[0])
+
             out_files.append(out_path)
-            self._preprocess_file(in_path, out_path,norm_path)
+            norm_files.append(norm_path)
+
+            self._preprocess_file(in_path, out_path, norm_path)
             print(f"preprocess for {file} done")
             n += 1
         print("preprocess completed")
-        return out_files
+        return out_files, norm_files
 
     def _locate(self, files: Iterable[str]):
         out_files = []
+        norm_files = []
         for file in files:
             in_path, out_path = self.in_dir + file, self.out_dir + file.split('.')[0]
+            norm_path = f"{self.out_dir}../norm/" + str(file.split('.')[0])
+
             out_files.append(out_path)
-        return out_files
+            norm_files.append(norm_path)
+
+        return out_files, norm_files
 
     def _preprocess_text(self, line):
         def gen():
