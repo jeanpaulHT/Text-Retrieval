@@ -1,6 +1,6 @@
-from index import Index
-from preprocessor import Preprocessor
-from queries import QueryEngine
+from src.index import Index
+from src.preprocessor import Preprocessor
+from src.queries import QueryEngine
 from os import listdir
 from os.path import isfile, join
 

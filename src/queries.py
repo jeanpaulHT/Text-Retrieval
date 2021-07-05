@@ -1,5 +1,5 @@
-from index import Index, calc_tf_idf
-from preprocessor import Preprocessor
+from src.index import Index, calc_tf_idf
+from src.preprocessor import Preprocessor
 from collections import Counter
 # import numpy as np
 import heapq
@@ -84,5 +84,4 @@ class QueryEngine:
             
         return list(map(str, heapq.nlargest(k, score.keys(), key=lambda x: score[x])))
         
-
 
