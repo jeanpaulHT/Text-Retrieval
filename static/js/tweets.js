@@ -5,24 +5,23 @@ $(function () {
               "query":query
                 });
         $.ajax({
-          url: '/search',
-          type: 'POST',
-          contentType: 'application/json',
-          data : makequery,
-          dataType:'json',
-          success: function(data){
-            results = document.getElementById("tweets");
-            results.innerHTML = "";
-            console.log(data)
-            var datos = JSON.parse(data)
-            console.log(datos)
-              for (tweet of datos) {
-           twttr.widgets.createTweet(tweet, results);
+              url: '/search',
+              type: 'post',
+              contentType: 'application/json',
+              data : makequery,
+              dataType:'json',
+              success: function(data){
+                results = document.getElementById('tweets');
+                results.innerHTML = "";
+                  for (tweet of data) {
+                    twttr.widgets.createTweet(tweet, results).then( function( el ) {
+                      console.log('Tweet added.');
+                    });
+                  }
+              },   
+              error: function(data){
+                  console.log(data);
               }
-          },   
-          error: function(data){
-              console.log(data);
-          }
-        });
+            });
       });
 })
