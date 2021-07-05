@@ -67,7 +67,8 @@ Inicialmente, se utilizan los files generados por el preprocessor para generar l
 
 El procedimiento puede verse en la siguiente imagen:
 
-(...)
+![alt text](https://github.com/jeanpaulHT/Text-Retrieval/blob/main/bd-diagram.png)
+
 
 ## Tiempos de ejecucion
 Para una cantidad de tweets igual a:  20 000
@@ -89,6 +90,5 @@ Para una cantidad de tweets igual a:  20 000
 
 ## Pruebas de uso y presentación
 
-- [Explicación del proyecto]()
-- [Pruebas funcionales]()
+- [video del proyecto]()
 
