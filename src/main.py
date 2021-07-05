@@ -1,33 +1,62 @@
-from index import Index
-from preprocessor import Preprocessor
-from queries import QueryEngine
+from src.index import Index
+from src.preprocessor import Preprocessor
+from src.queries import QueryEngine
 from os import listdir
 from os.path import isfile, join
 
-def main():
-    mypath = "texts/data_elecciones"
+# def main():
+#     mypath = "texts/data_elecciones"
+#     json_files = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+
+#     text_dir = "./texts/data_elecciones"
+#     out_dir = "./texts/preprocessing"
+#     stop_list = "./texts/stoplist.txt"
+    
+#     index_tmp_dir = "./texts/index"
+#     index_file = "./texts/index.txt"
+
+#     preprocessor = Preprocessor(text_dir, out_dir, stop_list)    
+#     out_files = preprocessor._locate(json_files)
+
+#     index = Index(
+#         index_file=index_file, 
+#         files=out_files, 
+#         tmp_dir=index_tmp_dir, 
+#         build=False              # change this to actually build
+#     )
+    
+#     engine = QueryEngine(preprocessor, index, 5)
+#     engine.search("muere martin vizcarra")
+
+
+# if __name__ == "__main__":
+#     main()
+
+
+def get_query_engine(depth=5, build=True):
+    mypath = "./texts/raw"
     json_files = [f for f in listdir(mypath) if isfile(join(mypath, f))]
 
-    text_dir = "./texts/data_elecciones"
+    text_dir = "./texts/raw"
     out_dir = "./texts/preprocessing"
     stop_list = "./texts/stoplist.txt"
     
     index_tmp_dir = "./texts/index"
     index_file = "./texts/index.txt"
+    
+    preprocessor = Preprocessor(text_dir, out_dir, stop_list)
 
-    preprocessor = Preprocessor(text_dir, out_dir, stop_list)    
-    out_files = preprocessor._locate(json_files)
+    if not build:
+      out_files = preprocessor._locate(json_files)
+    else:
+      out_files = preprocessor.preprocess(json_files)
 
     index = Index(
-        index_file=index_file, 
-        files=out_files, 
-        tmp_dir=index_tmp_dir, 
-        build=False              # change this to actually build
+        index_file=index_file,
+        files=out_files,
+        tmp_dir=index_tmp_dir,
+        build=build              
     )
-    
-    engine = QueryEngine(preprocessor, index, 5)
-    engine.search("muere martin vizcarra")
 
-
-if __name__ == "__main__":
-    main()
+    engine = QueryEngine(preprocessor, index, depth)
+    return engine

@@ -1,5 +1,5 @@
-from index import Index, calc_tf_idf
-from preprocessor import Preprocessor
+from src.index import Index, calc_tf_idf
+from src.preprocessor import Preprocessor
 from collections import Counter
 import pandas as pd
 import numpy as np
