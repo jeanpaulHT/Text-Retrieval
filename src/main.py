@@ -4,15 +4,15 @@ from queries import QueryEngine
 from os import listdir
 from os.path import isfile, join
 
-mypath = "../texts/raw"
+mypath = "./texts/raw"
 json_files = [f for f in listdir(mypath) if isfile(join(mypath, f))]
 
-text_dir = "../texts/raw"
-out_dir = "../texts/preprocessing"
-stop_list = "../texts/stoplist.txt"
+text_dir = "./texts/raw"
+out_dir = "./texts/preprocessing"
+stop_list = "./texts/stoplist.txt"
     
-index_tmp_dir = "../texts/index"
-index_file = "../texts/index.txt"
+index_tmp_dir = "./texts/index"
+index_file = "./texts/index.txt"
 
 def get_out_and_norm_files(preprocessor: Preprocessor, json_files, rebuild):
     if rebuild:
@@ -42,14 +42,15 @@ def main():
     stats.print_stats()
 
     query = "muere martin vizcarra"
-
+    
     with cProfile.Profile() as searchInEngine:
-        print(f"{query=}, result={engine.search(query, 5)}")
-
+        result = engine.search(query, 5)
 
     stats = pstats.Stats(searchInEngine)
     stats.sort_stats(pstats.SortKey.TIME)
     stats.print_stats()
+
+    print(f"result={result}")
 
 if __name__ == "__main__":
     main()

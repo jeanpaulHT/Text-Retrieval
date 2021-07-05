@@ -82,7 +82,7 @@ class QueryEngine:
         for document in score.keys():
             score[document] = score[document] / norms[document]
             
-        return heapq.nlargest(k, score.keys(), key=lambda x: score[x])
+        return list(map(str, heapq.nlargest(k, score.keys(), key=lambda x: score[x])))
         
 
 
