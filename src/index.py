@@ -3,7 +3,7 @@ import os
 from collections import Counter
 import pickle
 import shutil
-
+import os
 import math
 
 def calc_idf(N, df):
@@ -31,6 +31,37 @@ def merge_posts(a, b):
     yield from i
     yield from j
 
+def merged_norms(a: Iterable, b: Iterable):
+    iter_a, iter_b = iter(a), iter(b)
+    
+    cur_a: str = next(iter_a, None)
+    cur_b: str =  next(iter_b, None)
+
+    while cur_a is not None and cur_b is not None:
+        cur_a = cur_a.rstrip('\n')
+        cur_b = cur_b.rstrip('\n')
+        (id_a, oc_a), (id_b, oc_b) = cur_a.split(' '), cur_b.split(' ')
+        id_a, id_b = int(id_a), int(id_b)
+        if id_a < id_b:
+            yield cur_a + '\n'
+            cur_a = next(iter_a, None)
+        else:
+            yield cur_b + '\n'
+            cur_b = next(iter_b, None)
+
+    yield from iter_a
+    yield from iter_b
+
+
+T = TypeVar('T')      
+def pairwise_iter(iterable: Iterable[T]) -> Iterable[Tuple[T, Optional[T]]]:
+    iterator = iter(iterable)
+    val = next(iterator, None)
+    while val is not None:
+        n = next(iterator, None)
+        yield val, n
+        val = next(iterator, None)
+
 def merge_iters(a, b):
     i, j = iter(a), iter(b)
     val_i, val_j = next(i, None), next(j, None)
@@ -50,6 +81,8 @@ def merge_iters(a, b):
     
     yield from i
     yield from j
+
+
 
 class MergeableIndex:
     ENTRY_SIZE = 128
@@ -158,8 +191,6 @@ class MergeableIndex:
         with open(self.search_file, 'rb') as f:
             for i in range(len(self)):
                 bytearr = f.read(self.ENTRY_SIZE)
-                if len(bytearr) < self.ENTRY_SIZE:
-                    print(f"{bytearr=}")
                 item = pickle.loads(bytearr)
                 yield item
 
@@ -212,12 +243,14 @@ class MergeableIndex:
 
     def _make_bin_search(self, string, file):
         def bin_search(begin, end):
-            if begin >= end: return (None, None, None)
-            m = (begin + end) // 2
-            comparable, idf, position = self._read_table_pos(file, m)
-            if comparable == string: return (comparable, idf, position)
-            if comparable < string: return bin_search(m + 1, end)
-            return bin_search(begin, m)
+            while begin < end:
+                m = (begin + end) // 2
+                comparable, idf, position = self._read_table_pos(file, m)
+                if comparable == string: return (comparable, idf, position)
+                elif comparable < string: begin = m + 1
+                else: end = m
+            
+            return (None, None, None)
 
         return bin_search
 
@@ -255,14 +288,19 @@ class MergeableIndex:
 
 
 class Index(MergeableIndex):
-    def __init__(self, index_file=None, files=None, tmp_dir=None, build=True):
+    NORM_ENTRY_SIZE = 32
+
+    def __init__(self, index_file=None, files=None, norm_files=None, tmp_dir=None, build=True):
         no_action = True if build else False
         super().__init__(index_file=index_file, build=False, no_action=no_action)
-        if build:
-            self._build_all_and_merge(files, tmp_dir)
+        self.norm_file = f"{self.index_file}.norm"
 
-    def _build_all_and_merge(self, files, tmp_dir):
-        indexes = []
+        if build:
+            self._build_index(files, tmp_dir)
+            self._build_norm_file(norm_files, tmp_dir=tmp_dir)
+
+    def _build_index(self, files, tmp_dir):
+        indexes: List[MergeableIndex] = []
         
         filenames = [file.split('/')[-1] for file in files]
         for filename, file in zip(filenames, files):
@@ -272,14 +310,6 @@ class Index(MergeableIndex):
                 build=True
             )
             indexes.append(tmp)
-        
-        def pairwise_iter(iterable):
-            iterator = iter(iterable)
-            val = next(iterator, None)
-            while val is not None:
-                n = next(iterator, None)
-                yield val, n
-                val = next(iterator, None)
 
         i = 0
         while len(indexes) > 1:
@@ -297,13 +327,100 @@ class Index(MergeableIndex):
             indexes = next_indexes
 
         result: MergeableIndex = indexes[0]
-        print(len(result))
+        
+        print("recalculating idf")
         result._recalculate_idf()
-        print(len(result))
 
+        print("moving index to final destination")
         shutil.move(result.index_file, self.index_file)
         shutil.move(result.search_file, self.search_file)
         self._size = len(result)
         
+    def _build_norm_file(self, norm_files=None, tmp_dir=None):
+        sorted_files = self._sort_norm_files(norm_files=norm_files)
+        norms: List[str] = [file for file in sorted_files]
+
+        i = 0
+        print("Merging norm files")
+        while len(norms) > 1:
+            next_norms = []
+            for first, second in pairwise_iter(norms):
+                if second is None:
+                    next_norms.append(first)
+                    break
+            
+                new_norm_file = self.merge_norm_files(first, second, f"{tmp_dir}/norm_{i}.dat")
+                next_norms.append(new_norm_file)
+                i += 1
+                os.remove(first)
+                os.remove(second)
+            norms = next_norms
+
+        norm_src: str = norms[0]
+        with open(norm_src, 'r') as src, open(self.norm_file, 'w+b') as dst:
+            print(f"Binarizing temp file {norm_src} into {self.norm_file}")
+            for id_str, norm_str in map(lambda x: x.rstrip('\n').split(' '), src.readlines()):
+                id = int(id_str)
+                norm = int(norm_str)
+                dump = pickle.dumps((id, norm))
+                assert(len(dump) <= self.NORM_ENTRY_SIZE)
+
+                dump = dump.ljust(self.NORM_ENTRY_SIZE, b'\0')
+                dst.write(dump)
+
+        os.remove(norm_src)
+                
+            
+    def get_norm(self, document):
+        with open(self.norm_file, 'rb') as nf:
+            nf.seek(0, 2)
+            size = nf.tell() 
+            size = size // self.NORM_ENTRY_SIZE
+            nf.seek(0, 0)
+
+            def read_norm_entry(pos):
+                nf.seek(pos * self.NORM_ENTRY_SIZE)
+                bytearr = nf.read(self.NORM_ENTRY_SIZE)
+                load = pickle.loads(bytearr)
+                return load
+                
+            def bin_search(begin, end):
+                while begin < end:
+                    m = (begin + end) // 2
+                    doc_id, norm = read_norm_entry(m)
+                    if doc_id == document: return norm
+                    elif doc_id < document: begin = m + 1
+                    else: end = m
+            
+                return 0
+
+            return bin_search(0, size)
+
+            
+    
+    @staticmethod
+    def merge_norm_files(first, second, new_name):
+        with open(new_name, 'w') as new, open(first, 'r') as f, open(second, 'r') as s:
+            iterrows_a = f.readlines()
+            iterrows_b = s.readlines()
+            for line in merged_norms(iterrows_a, iterrows_b):
+                new.write(line)
+        return new_name
+
+    @staticmethod
+    def _sort_norm_files(norm_files=None):
+        ret = []
+        for file in norm_files:
+            print(f"sorting base norm file {file}")
+            lines = []
+            with open(file, 'r') as f:
+                lines = [line for line in f]
+
+            sorted_name = f"{file}.sort"
+            with open(sorted_name, 'w') as f:
+                ret.append(sorted_name)
+                for line in sorted(lines, key=lambda x: int(x.rstrip('\n').split(' ')[0])):
+                    f.write(line)
+        return ret
 
     
