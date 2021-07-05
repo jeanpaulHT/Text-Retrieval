@@ -75,7 +75,11 @@ class QueryEngine:
                 score[document] += w_td * w_tq
         
         for document in score.keys():
-            score[document] = score[document] / self.index.get_norm(document)
+            try:
+                score[document] = score[document] / self.index.get_norm(document)
+            except Exception:
+                print("Error: ", f"{document=}")
+                exit(-1)
         
         return heapq.nlargest(k, score.keys(), key=lambda x: score[x])
         

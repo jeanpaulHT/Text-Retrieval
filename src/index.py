@@ -6,15 +6,19 @@ import shutil
 import os
 import math
 
+T = TypeVar('T')  
+
 def calc_idf(N, df):
     return math.log10(N/df)
 
 def calc_tf_idf(tf_td, idf):
     return math.log10(1 + tf_td) * idf
     
-def merge_posts(a, b):
+def merge_posts(a: Iterable, b: Iterable):
     i, j = iter(a), iter(b)
     val_i, val_j = next(i, None), next(j, None)
+    if val_i is None and val_j is not None: yield val_j
+    if val_j is None and val_i is not None: yield val_i
 
     while val_i is not None and val_j is not None:
         (id_i, df_i), (id_j, df_j) = val_i, val_j
@@ -36,6 +40,9 @@ def merged_norms(a: Iterable, b: Iterable):
     
     cur_a: str = next(iter_a, None)
     cur_b: str =  next(iter_b, None)
+    if cur_a is None and cur_b is not None: yield cur_b
+    if cur_b is None and cur_a is not None: yield cur_a
+
 
     while cur_a is not None and cur_b is not None:
         cur_a = cur_a.rstrip('\n')
@@ -52,19 +59,12 @@ def merged_norms(a: Iterable, b: Iterable):
     yield from iter_a
     yield from iter_b
 
-
-T = TypeVar('T')      
-def pairwise_iter(iterable: Iterable[T]) -> Iterable[Tuple[T, Optional[T]]]:
-    iterator = iter(iterable)
-    val = next(iterator, None)
-    while val is not None:
-        n = next(iterator, None)
-        yield val, n
-        val = next(iterator, None)
-
-def merge_iters(a, b):
+def merge_iters(a: Iterable, b: Iterable):
     i, j = iter(a), iter(b)
     val_i, val_j = next(i, None), next(j, None)
+
+    if val_i is None and val_j is not None: yield val_j
+    if val_j is None and val_i is not None: yield val_i
 
     while val_i is not None and val_j is not None:
         (str_i, post_i), (str_j, post_j) = val_i, val_j
@@ -81,7 +81,14 @@ def merge_iters(a, b):
     
     yield from i
     yield from j
-
+    
+def pairwise_iter(iterable: Iterable[T]) -> Iterable[Tuple[T, Optional[T]]]:
+    iterator = iter(iterable)
+    val = next(iterator, None)
+    while val is not None:
+        n = next(iterator, None)
+        yield val, n
+        val = next(iterator, None)
 
 
 class MergeableIndex:
@@ -345,15 +352,17 @@ class Index(MergeableIndex):
         while len(norms) > 1:
             next_norms = []
             for first, second in pairwise_iter(norms):
+                
                 if second is None:
                     next_norms.append(first)
                     break
             
                 new_norm_file = self.merge_norm_files(first, second, f"{tmp_dir}/norm_{i}.dat")
+                print(f"Merged norm files {first} and {second} into {new_norm_file} ")
                 next_norms.append(new_norm_file)
                 i += 1
-                os.remove(first)
-                os.remove(second)
+                # os.remove(first)
+                # os.remove(second)
             norms = next_norms
 
         norm_src: str = norms[0]
@@ -368,7 +377,6 @@ class Index(MergeableIndex):
                 dump = dump.ljust(self.NORM_ENTRY_SIZE, b'\0')
                 dst.write(dump)
 
-        os.remove(norm_src)
                 
             
     def get_norm(self, document):
