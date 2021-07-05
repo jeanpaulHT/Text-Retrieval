@@ -90,5 +90,5 @@ Para una cantidad de tweets igual a:  20 000
 
 ## Pruebas de uso y presentación
 
-- [video del proyecto](https://drive.google.com/drive/folders/1vCWJYOEFpJduP1AZBpRjJouA5BNZIWBy?usp=sharing)
+- [Vídeo del proyecto](https://drive.google.com/drive/folders/1vCWJYOEFpJduP1AZBpRjJouA5BNZIWBy?usp=sharing)
 
